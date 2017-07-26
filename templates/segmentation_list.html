@@ -1,0 +1,357 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    {{ super() }}
+{% endblock %}
+
+{% block content %}
+
+	<h1 class="ui header"><i class="users icon"></i>{{ title }}</h1>
+
+	{% if current_user.is_authenticated %}
+	{% endif %}
+ <div class="ui divider"></div>
+<table class="ui celled striped table" id="testtable">
+  <thead>
+    <tr><th colspan="3">
+      My Segments
+    </th>
+  </tr>
+  </thead>
+  <tbody id="testtablebody">
+  </tbody>
+  </table>
+<style>
+	.ui.container.form {
+		margin-left: 30px;
+		margin-right: 30px;
+		padding-right: 10px;
+}
+</style> 
+<div class="ui edit modal">
+  <div class="header">
+	<h4>Edit Segment</h4>
+  </div>
+  <div class="ui container form" id="edit_form">
+	<p> </p>
+	<div class="two fields">
+	<div class="field">
+		<label><i class="write icon"></i>Name</label>
+		<div class="field">
+			<input type="text" name="input_name" placeholder="Segment Name">
+		</div>
+	</div>
+	<div class="field">
+		<label><i class="privacy icon"></i>Privacy</label>
+		<select class="ui fluid dropdown privacy" name="input_privacy">
+			<option value="1">Public</option>
+			<option value="2">Private</option>
+			<option value="3">Group</option>
+		</select>
+	</div>
+	</div>
+	<div class="field">
+		<label><i class="write icon"></i>Description</label>
+		<div class="field">
+			<input type="text" name="input_description" placeholder="Segment description">
+		</div>
+	</div>
+	<div class="field">
+		<label><i class="options icon"></i>Settings</label>
+		<div class="ui divider"></div>
+		<table class="ui celled striped table">
+  		  <thead>
+    	   	  <tr><th colspan="4">
+      		  	Conditions
+    		  </th>
+  		  </tr>
+  		  </thead>
+		  <tbody id="conditionsbody">
+		  </tbody>
+		</table>
+		<div class="ui middle aligned divided list">
+			<div class="item">
+				<div class="ui right floated content">
+					<button class="ui basic button add settings"><i class="plus icon"></i></button>
+				</div>
+				<div class="content"> </div> 
+			</div>
+		</div>
+	</div>
+	<button class="ui submit button basic">Submit</button>
+	<p> </p>
+  </div>
+</div>
+
+<div class="ui runs modal">
+  <div class="header">
+        <h4>Runs</h4>
+  </div>
+  <div class="runs modal container">
+	runs
+  </div>
+</div>
+
+<script>
+$(document).ready(function(){
+var jsonPointer = "/api/segmentation/list/";
+$.getJSON(jsonPointer, function( data ) {
+  var items = [];
+  $.each(data, function(index, item) {
+	item = '<tr id="'
+	item += data[index].id
+	item += '">'
+	item += '<td class="name collapsing">'
+	item += data[index].name
+	item += '</td>'
+	item += '<td class="description">'
+	item += data[index].description
+	item += '</td>'
+	item += '<td class="right aligned collapsing"><button class="ui edit button basic" value="'
+	item += data[index].id
+	item += '"><i class="edit icon"></i>Edit</button>'
+	item += '<button class="ui runs button basic" value="'
+	item += data[index].id
+	item += '"><i class="calendar icon"></i>Runs</button>'
+	item += '<input type="hidden" value='
+	item += data[index].privacy
+	item += ' class="privacy">'
+	item += '</td>'
+	item += '</tr>'
+	items.push(item);
+	});
+items.push("</tbody>");
+$("#testtablebody").append(items);
+  });
+
+});
+</script>
+<script>
+var max_edits = 5;
+var num_conditions = 0;
+var attributes = [];
+var attributes_names = []
+$(function() {
+	function get_attributes_async (){
+			 var promiseBroker = $.Deferred();
+			$.ajax({
+			  url: "/api/customer_profile/attributes",
+			  success: function(result) {
+				var attribute_list = [];
+				var data = $.parseJSON(result);
+				$.each(data, function(index) {
+					attribute_list.push(data[index]);
+				});
+				promiseBroker.resolve(attribute_list);
+			  },
+			  error: function(result){
+				promiseBroker.reject();
+				return 'None'
+			  },
+			  async: false});
+			return promiseBroker.promise();
+	}
+	function get_arrdic_vals_by_key(array_dic, key) {
+		var items = [];
+		$.each(array_dic, function(index, item) {
+			if(key in item){
+				items.push(item[key]);}
+		});
+		return items
+	}
+	$(document).on("click", '.ui.edit.button', function() {
+		num_conditions = 0;
+		attributes = get_attributes_async();	
+		attributes_names = [];
+		attributes.done(function(data) {
+			var names = get_arrdic_vals_by_key(data, 'name'); 
+			attributes_names = $.merge(names, attributes_names);	
+		});
+		var id = $(this).attr('value');
+		var name = $('#' + id + ' > .name').text();
+		var description = $('#' + id + ' > .description').text();
+		var privacy =  $('#' + id + ' > td > .privacy').val();
+		$('input[name=input_name]').val(name);
+		$('input[name=input_description]').val(description);
+		$('.ui.fluid.dropdown.privacy').dropdown('set selected', [privacy]);
+		$('.ui.basic.button.add.settings').show();     
+		//set dummy value from metadata
+		$('#conditionsbody').html('');
+		$('.ui.edit.modal').modal('show');
+		});
+	$(document).on("click", '.ui.runs.button', function() {	
+		var id = $(this).attr('value');
+		$('.runs.modal.container').text(id);
+		$('.ui.runs.modal').modal('show');
+	});
+	$('.ui.submit.button').api({
+		//$.fn.api.settings.api to define actions
+		//action: 'edit segment,
+		url: '/api/segmentation/edit',
+		method: 'PUT',
+		data: {
+      			id: 'Joe Henderson',
+			name: 'dummy segment',
+			description: 'dummy description',
+			privacy: 'public'
+   		 },
+		//this should be changed
+		beforeSend: function() {
+			$('.ui.edit.modal').modal('hide');
+		}
+	});	
+	function gen_options(my_array) {
+		items = [];
+		$.each(my_array, function(index){
+			item = '<option>';
+			item += my_array[index];
+			item += '</option>';
+			items.push(item);
+			});
+		return items.join('');
+	}
+	function gen_items(my_array) {
+		items = [];
+		$.each(my_array, function(index) {
+			item = '<div class="item">';
+			item += my_array[index];
+			item += '</div>';
+			items.push(item);
+			});
+		return items.join('');
+	}
+	function gen_options_type(option_type) {
+		if(option_type == 'numerical') {
+			options = ['>', '>=', '<', '<=', '=', '!=','in', 'not in'];
+		} else if (option_type == 'categorical') {
+			options = ['=','!=', 'in', 'not in'];
+		} else {
+			options = [];
+		}
+		return gen_options(options);
+	}
+	function gen_input_by_option_type(option_list, option_type){
+		if(option_type == 'categorical_list'){
+                        // if option is an object there is a list of values passed to gen_input_by_options
+                        // We should generate a dropdown selector based on them
+                        egg = '<div class="ui selection dropdown multiple">';
+                        egg += '<input type="hidden" name="test" value="" />';
+                        egg += '<div class="default text">Default</div>';
+                        egg += '<div class="menu">';
+                        $.each(option, function(index){
+                                egg += '<div class="item" data-value="';
+                                egg += option[index];
+                                egg += '" data-text="';
+                                egg += option[index];
+                                egg += '">';
+                                egg += option[index];
+                                egg += '</div>  ';
+                        });
+                        egg += '</div></div>';
+                        input = egg;		
+		} else {
+			input = '';
+		}
+		return input
+	}
+	function gen_input_by_option(option){
+		if(typeof(option) == 'object'){
+			// if option is an object there is a list of values passed to gen_input_by_options
+			// We should generate a dropdown selector based on them
+			egg = '<div class="ui selection dropdown multiple">';
+			egg += '<input type="hidden" name="test" value="" />';
+			egg += '<div class="default text">Default</div>';
+			egg += '<div class="menu">';
+			$.each(option, function(index){
+				egg += '<div class="item" data-value="';
+				egg += option[index];
+				egg += '" data-text="';
+				egg += option[index];
+				egg += '">';
+				egg += option[index];
+				egg += '</div>	';
+			});
+			egg += '</div></div>';
+			input = egg;
+		}
+		else if($.inArray(option, ['>', '>=']) != -1) {
+			input = 'placeholder';	
+		}
+		else {
+			input = '<input type="text">';
+		}
+		return input 
+	}
+	$(document).on("click", '.ui.basic.button.add.settings', function() {	
+		item = '"<tr>';
+		item += '<td class="name collapsing">';
+		item += '<div class="ui labeled top basic dropdown button"><div class="attr">Attribute</div>';
+		item += '<div class="attributes menu"><div class="ui search icon input"><i class="search icon"></i>';
+		item += '<input type="text" name="search" placeholder="Search attributes..."></div>';
+		item += '<div class="divider"></div><div class="header">';
+		item += 'Filter</div>';
+		item += gen_items(attributes_names);
+		item += '</div></div>';
+		item += '</td>';
+		item += '<td class="options"><select class="ui dropdown">';
+		item += gen_options_type('None');
+		item += '</select></td>';
+		item += '<td class="input">'
+		item += gen_input_by_option('>');
+		item += '</td>';
+		item += '<td class="right aligned collapsing"><button class="ui basic delete button"><i class="remove icon red"></i></button></td>';
+		item += '</tr>';
+		window.num_conditions += 1;
+		if(window.num_conditions >= window.max_edits){
+			$('.ui.basic.button.add.settings').hide();
+		}
+		$('#conditionsbody').append(item);
+		$('.ui.labeled')
+  			.dropdown()
+		;	
+	});
+	$(document).on("click", '.ui.basic.delete.button', function() {
+		if(window.num_conditions >= window.max_edits){
+			 $('.ui.basic.button.add.settings').show();	
+		}
+		window.num_conditions -= 1;
+		$(this).parent().parent().remove();
+	});
+	$(document).on('click', '.attributes.menu', function() { 
+		var this_val = $(this).children('.selected').text();
+		if(this_val){
+			$(this).parent().children('.attr').text(this_val);
+			var row_parent = $(this).parent().parent().parent();
+			attributes.done(function(data){
+				att_alert = $.grep(data, function(el) {return el.name == this_val;});
+				var option_type = att_alert[0].type;
+				var option_list = att_alert[0].list;
+				// add case when value is not matching to pull the item information
+				// modify row input based on that
+				if(option_type){
+					var options_div = row_parent.children('.options').children('.ui.dropdown');
+					options_div.html(gen_options_type(option_type));
+				};
+				var options_div = row_parent.children('.input');
+				if(option_list){
+					options_div.html(gen_input_by_option(option_list));
+				}
+				else {
+					options_div.html(gen_input_by_option(''));
+				}
+				var search_box = '.ui.selection.dropdown.multiple';
+				$(search_box).dropdown({
+					maxSelections: 3, 
+					useLabels: true,
+					allowAdditions: false
+				});
+
+			});
+			
+		}
+	});
+
+});
+</script>
+</div>
+{% endblock %}

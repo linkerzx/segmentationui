@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+{% import "macros.html" as m %}
+<html lang="en">
+	<body id="container">
+   		<div id="header">
+   			{% block head %}
+				<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no'/>
+    <style>
+      h1, h2, p {
+        text-align: center;
+      }
+      .leaflet-container {
+        height: 500px;
+        width: 80%;
+        margin: 0 auto;
+      }
+.leaflet-control-layers {
+visibility: hidden !important;
+}
+.custome-cursor {
+  background:gray;
+  width:20px;
+  height:20px;
+  cursor:url('/image/20/20'), auto;
+}
+.activeMarker{
+	width: 40px;
+}
+    </style>
+
+				<meta charset="UTF-8">
+				<!-- Semantic Main CSS -->
+				<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.7/semantic.min.css"/>
+				<!-- X -->
+				 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+				<!-- Semantic Reset CSS -->
+				<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.7/components/reset.min.css"/>
+				<!-- Semantic Menu CSS -->
+				<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.7/components/menu.min.css"/>
+                 <!-- Semantic DropDown CSS -->
+                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.7/components/dropdown.min.css"/>
+				<!-- Browser tab name -->
+				<title>{{ title }}</title>
+				<!-- Navbar -->
+				<div class="ui attached inverted menu">
+			
+				 	<div class="right menu">
+				 		<!-- User is logged in -->
+
+</div>
+
+			  		
+				</div>
+			{% endblock %}
+   		</div>
+   		<div id="body" class="body">
+   			{% block content %}{% endblock %}
+   		</div>
+		<div id="footer">
+			<div class="ui divider"></div>
+  		</div>
+		</div>
+	</body>
+</html>
